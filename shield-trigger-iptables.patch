@@ -1,0 +1,38 @@
+--- shield-trigger-iptables	2011-01-12 13:59:18.000000000 -0600
++++ shield-trigger-iptables	2011-04-30 18:31:36.373742766 -0500
+@@ -32,6 +32,25 @@
+ 		IPT=ip6tables
+ 	fi
+ 
++#	switch -A for iptables to -I
++	if [ "$1" == "-A" ]
++	then
++		TASK="-I"
++	else
++		TASK="-D"
++	fi
++
++#	check to see if pam_shield chain exists and create if necessary
++	if [ "$TASK" == "-I" ]
++	then
++		CHAIN_TEST=`$IPT -L pam_shield 2>/dev/null`
++		if [ -z "$CHAIN_TEST" ]
++		then
++			"$IPT" -N pam_shield
++			"$IPT" -I pam_shield -j DROP
++		fi
++	fi
++
+ #
+ #	CUSTOMIZE THIS RULE
+ #
+@@ -43,7 +62,8 @@
+ #	* put in the correct port number (22 is ssh)
+ #	* add additional rules for additional services as needed
+ #
+-	"$IPT" "$1" INPUT -i eth0 -p tcp -s "$2" --destination-port 22 -j pam_shield
++
++	"$IPT" "$TASK" INPUT -i eth0 -p tcp -s "$2" -j pam_shield
+ 
+ #	mail -s "[security] pam_shield blocked $2" root <<EOF
+ #Another monkey kept off our backs ...
